@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CNC G-Code Simulator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <section class="left-panel">
+        <h1>CNC G-Code Simulator</h1>
+        <textarea id="gcodeEditor" spellcheck="false"></textarea>
+        <div class="controls">
+          <button id="parseBtn">Parse</button>
+          <button id="startBtn">Start</button>
+          <button id="pauseBtn">Pause</button>
+          <button id="stepBtn">Step</button>
+          <button id="resetBtn">Reset</button>
+        </div>
+        <div class="speed-control">
+          <label for="speedSlider">Simulation Speed: <span id="speedValue">1.0×</span></label>
+          <input id="speedSlider" type="range" min="0.2" max="5" step="0.1" value="1" />
+        </div>
+      </section>
+
+      <section class="right-panel">
+        <canvas id="toolpathCanvas" width="900" height="600"></canvas>
+        <div class="status-panel">
+          <div><strong>Units:</strong> <span id="statusUnits">mm</span></div>
+          <div><strong>Mode:</strong> <span id="statusMode">G90</span></div>
+          <div><strong>Feed:</strong> <span id="statusFeed">0</span></div>
+          <div><strong>RPM:</strong> <span id="statusRpm">0</span></div>
+          <div><strong>Spindle:</strong> <span id="statusSpindle">M5</span></div>
+          <div><strong>X:</strong> <span id="statusX">0.000</span></div>
+          <div><strong>Y:</strong> <span id="statusY">0.000</span></div>
+          <div><strong>Z:</strong> <span id="statusZ">0.000</span></div>
+          <div><strong>Current Line:</strong> <span id="statusLine">-</span></div>
+        </div>
+
+        <div class="parsed-lines-wrap">
+          <h2>Parsed Lines</h2>
+          <ol id="parsedLines"></ol>
+        </div>
+      </section>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
