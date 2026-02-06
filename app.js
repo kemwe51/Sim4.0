@@ -31,6 +31,7 @@ const cycleStartBtn = $('cycleStartBtn');
 const feedHoldBtn = $('feedHoldBtn');
 const stepBtn = $('stepBtn');
 const resetBtn = $('resetBtn');
+const exportUnrealBtn = $('exportUnrealBtn');
 const singleBlockInput = $('singleBlock');
 
 const speedSlider = $('speedSlider');
@@ -42,6 +43,7 @@ const stockWidthInput = $('stockWidth');
 const stockHeightInput = $('stockHeight');
 const stockDepthInput = $('stockDepth');
 const toolDiameterInput = $('toolDiameter');
+const simResolutionInput = $('simResolution');
 
 const machineMaxXInput = $('machineMaxX');
 const machineMaxYInput = $('machineMaxY');
@@ -96,7 +98,7 @@ function setupDefaults() {
       depth: Number(stockDepthInput.value || 20),
     },
     toolDiameter: Number(toolDiameterInput.value || 10),
-    resolution: 2,
+    resolution: Math.max(0.01, Number(simResolutionInput.value || 0.1)),
     envelope: {
       maxX: Number(machineMaxXInput.value || 762),
       maxY: Number(machineMaxYInput.value || 406),
@@ -160,8 +162,12 @@ function parseToken(token) {
 
 function buildHeightmap() {
   const { stock, resolution } = state.setup;
-  state.cellsX = Math.max(10, Math.round(stock.width / resolution));
-  state.cellsY = Math.max(10, Math.round(stock.height / resolution));
+  const requestedCellsX = Math.max(10, Math.round(stock.width / resolution));
+  const requestedCellsY = Math.max(10, Math.round(stock.height / resolution));
+  const maxCells = 280000;
+  const scale = Math.max(1, Math.sqrt((requestedCellsX * requestedCellsY) / maxCells));
+  state.cellsX = Math.max(10, Math.round(requestedCellsX / scale));
+  state.cellsY = Math.max(10, Math.round(requestedCellsY / scale));
   state.heightmap = Array.from({ length: state.cellsY }, () => new Float32Array(state.cellsX).fill(stock.depth));
   state.removedVolumeMm3 = 0;
   state.removedVolumeAtLastLine = 0;
@@ -231,7 +237,7 @@ function processInterpolation(points, motion) {
 
 function interpolateLinePoints(start, end) {
   const dist = Math.hypot(end.x - start.x, end.y - start.y, end.z - start.z);
-  const steps = Math.max(1, Math.ceil(dist / 1));
+  const steps = Math.max(1, Math.ceil(dist / Math.max(0.01, state.setup.resolution)));
   const points = [];
   for (let i = 1; i <= steps; i += 1) {
     const t = i / steps;
@@ -252,7 +258,7 @@ function interpolateArcPoints(start, end, center, cw) {
   if (!cw && a1 <= a0) a1 += Math.PI * 2;
   const delta = a1 - a0;
   const arcLen = Math.abs(delta * r);
-  const steps = Math.max(4, Math.ceil(arcLen / 1));
+  const steps = Math.max(4, Math.ceil(arcLen / Math.max(0.01, state.setup.resolution)));
   const points = [];
 
   for (let i = 1; i <= steps; i += 1) {
@@ -648,6 +654,39 @@ function draw() {
   draw3DScene(w, h);
 }
 
+
+function exportUnrealPayload() {
+  const payload = {
+    generator: 'Sim4.0 CNC Browser Prototype',
+    intent: 'Unreal Engine high-fidelity toolpath playback',
+    units: 'mm',
+    precisionMm: state.setup.resolution,
+    stock: state.setup.stock,
+    toolDiameterMm: state.setup.toolDiameter,
+    machineEnvelope: state.setup.envelope,
+    workOffset: state.setup.offsets[state.machine.wcs] || { x: 0, y: 0, z: 0 },
+    parsedLines: state.parsed.map((line) => ({
+      sourceLine: line.originalLineNumber,
+      gcode: line.cleaned,
+    })),
+    pathSegments: state.pathSegments.map((seg, idx) => ({
+      id: idx + 1,
+      motion: seg.motion,
+      from: seg.from,
+      to: seg.to,
+      arcData: seg.arcData || null,
+    })),
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  const stamp = new Date().toISOString().replace(/[\:\.]/g, '-');
+  link.href = URL.createObjectURL(blob);
+  link.download = `unreal-cnc-toolpath-${stamp}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 function renderParsedLines() {
   parsedLinesEl.innerHTML = '';
   state.parsed.forEach((line, idx) => {
@@ -680,7 +719,7 @@ function updateUI() {
   statusLine.textContent = state.pc < state.parsed.length ? `${state.pc + 1}` : 'END';
   statusCutting.textContent = state.cuttingNow ? 'YES' : 'NO';
   statusRemoved.textContent = `${(state.removedVolumeMm3 / 1000).toFixed(2)} cm³`;
-  statusMrr.textContent = `${state.mrrCm3PerMin.toFixed(2)} cm³/min`;
+  statusMrr.textContent = `${state.mrrCm3PerMin.toFixed(2)} cm³/min @ ${state.setup.resolution.toFixed(2)} mm`;
 
   const left = Math.max(0, 100 - (state.removedVolumeMm3 / Math.max(1, state.initialVolumeMm3)) * 100);
   statusStock.textContent = `${left.toFixed(1)}%`;
@@ -727,6 +766,11 @@ feedOverrideInput.addEventListener('change', () => {
   updateUI();
 });
 
+exportUnrealBtn.addEventListener('click', () => {
+  if (!state.parsed.length) parseAndReset();
+  exportUnrealPayload();
+});
+
 viewModeSelect.addEventListener('change', () => {
   state.viewMode = viewModeSelect.value === '2d' ? '2d' : '3d';
   draw();
@@ -737,6 +781,7 @@ viewModeSelect.addEventListener('change', () => {
   stockHeightInput,
   stockDepthInput,
   toolDiameterInput,
+  simResolutionInput,
   machineMaxXInput,
   machineMaxYInput,
   machineMaxZInput,

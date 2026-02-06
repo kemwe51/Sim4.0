@@ -18,6 +18,7 @@
           <button id="feedHoldBtn">Feed Hold</button>
           <button id="stepBtn">Single Step</button>
           <button id="resetBtn">Reset</button>
+          <button id="exportUnrealBtn">Export Unreal JSON</button>
         </div>
 
         <div class="speed-control">
@@ -38,6 +39,7 @@
             <label>Stock Y (mm)<input id="stockHeight" type="number" min="20" max="500" step="5" value="80" /></label>
             <label>Stock Z (mm)<input id="stockDepth" type="number" min="2" max="120" step="1" value="20" /></label>
             <label>Tool Ø (mm)<input id="toolDiameter" type="number" min="1" max="40" step="0.5" value="10" /></label>
+            <label>Simulation Precision (mm)<input id="simResolution" type="number" min="0.01" max="5" step="0.01" value="0.1" /></label>
           </div>
 
           <h3>Machine Envelope (Haas 3-axis style)</h3>
@@ -61,8 +63,8 @@
       <section class="right-panel">
         <canvas id="toolpathCanvas" width="900" height="600"></canvas>
         <p class="viewer-note">
-          Ziel: industrietaugliche 1:1-Simulation. Der Viewer zeigt einen 3D-Maschinenraum mit Materialabtrag,
-          ersetzt aber noch kein voll kalibriertes CAM-/Controller-Modell.
+          Ziel: industrietaugliche High-Fidelity-Simulation. Dieser Build rendert mit bis zu 0,01&nbsp;mm,
+          exportiert Toolpaths für Unreal-Workflows und bleibt dennoch ein Browser-Prototyp.
         </p>
         <div class="status-panel">
           <div><strong>Units:</strong> <span id="statusUnits">mm</span></div>
