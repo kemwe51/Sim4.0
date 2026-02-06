@@ -11,16 +11,45 @@
       <section class="left-panel">
         <h1>CNC G-Code Simulator</h1>
         <textarea id="gcodeEditor" spellcheck="false"></textarea>
+
         <div class="controls">
           <button id="parseBtn">Parse</button>
-          <button id="startBtn">Start</button>
-          <button id="pauseBtn">Pause</button>
-          <button id="stepBtn">Step</button>
+          <button id="cycleStartBtn">Cycle Start</button>
+          <button id="feedHoldBtn">Feed Hold</button>
+          <button id="stepBtn">Single Step</button>
           <button id="resetBtn">Reset</button>
         </div>
+
         <div class="speed-control">
           <label for="speedSlider">Simulation Speed: <span id="speedValue">1.0×</span></label>
-          <input id="speedSlider" type="range" min="0.2" max="5" step="0.1" value="1" />
+          <input id="speedSlider" type="range" min="0.2" max="6" step="0.1" value="1" />
+          <label class="checkline"><input id="singleBlock" type="checkbox" /> Single Block (Haas-like)</label>
+        </div>
+
+        <div class="setup-panel">
+          <h2>Digital Twin Setup</h2>
+          <div class="setup-grid">
+            <label>Stock X (mm)<input id="stockWidth" type="number" min="20" max="500" step="5" value="120" /></label>
+            <label>Stock Y (mm)<input id="stockHeight" type="number" min="20" max="500" step="5" value="80" /></label>
+            <label>Stock Z (mm)<input id="stockDepth" type="number" min="2" max="120" step="1" value="20" /></label>
+            <label>Tool Ø (mm)<input id="toolDiameter" type="number" min="1" max="40" step="0.5" value="10" /></label>
+          </div>
+
+          <h3>Machine Envelope (Haas 3-axis style)</h3>
+          <div class="setup-grid">
+            <label>X Max (mm)<input id="machineMaxX" type="number" min="100" max="2000" step="10" value="762" /></label>
+            <label>Y Max (mm)<input id="machineMaxY" type="number" min="100" max="2000" step="10" value="406" /></label>
+            <label>Z Max (mm)<input id="machineMaxZ" type="number" min="50" max="1200" step="10" value="508" /></label>
+            <label>Z Min (mm)<input id="machineMinZ" type="number" min="-1200" max="0" step="10" value="-508" /></label>
+          </div>
+
+          <h3>Work Offset G54</h3>
+          <div class="setup-grid">
+            <label>G54 X (mm)<input id="offsetX" type="number" step="0.1" value="0" /></label>
+            <label>G54 Y (mm)<input id="offsetY" type="number" step="0.1" value="0" /></label>
+            <label>G54 Z (mm)<input id="offsetZ" type="number" step="0.1" value="0" /></label>
+            <label>Feed Override (%)<input id="feedOverride" type="number" min="1" max="200" step="1" value="100" /></label>
+          </div>
         </div>
       </section>
 
@@ -28,14 +57,30 @@
         <canvas id="toolpathCanvas" width="900" height="600"></canvas>
         <div class="status-panel">
           <div><strong>Units:</strong> <span id="statusUnits">mm</span></div>
-          <div><strong>Mode:</strong> <span id="statusMode">G90</span></div>
+          <div><strong>Mode:</strong> <span id="statusMode">G90 G0</span></div>
           <div><strong>Feed:</strong> <span id="statusFeed">0</span></div>
           <div><strong>RPM:</strong> <span id="statusRpm">0</span></div>
           <div><strong>Spindle:</strong> <span id="statusSpindle">M5</span></div>
           <div><strong>X:</strong> <span id="statusX">0.000</span></div>
           <div><strong>Y:</strong> <span id="statusY">0.000</span></div>
           <div><strong>Z:</strong> <span id="statusZ">0.000</span></div>
+          <div><strong>MC X:</strong> <span id="statusMx">0.000</span></div>
+          <div><strong>MC Y:</strong> <span id="statusMy">0.000</span></div>
+          <div><strong>MC Z:</strong> <span id="statusMz">0.000</span></div>
+          <div><strong>Cutting:</strong> <span id="statusCutting">NO</span></div>
+          <div><strong>Removed:</strong> <span id="statusRemoved">0.00 cm³</span></div>
+          <div><strong>Stock Left:</strong> <span id="statusStock">100.0%</span></div>
+          <div><strong>MRR:</strong> <span id="statusMrr">0.00 cm³/min</span></div>
+          <div><strong>Alarm:</strong> <span id="statusAlarm">NONE</span></div>
           <div><strong>Current Line:</strong> <span id="statusLine">-</span></div>
+        </div>
+
+        <div class="legend">
+          <span><i class="chip"></i> Material (hoch)</span>
+          <span><i class="cut"></i> Material (abgetragen)</span>
+          <span><i class="rapid"></i> G0</span>
+          <span><i class="feed"></i> G1/G2/G3</span>
+          <span><i class="alarm"></i> Alarm / Limit</span>
         </div>
 
         <div class="parsed-lines-wrap">
