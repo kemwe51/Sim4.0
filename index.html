@@ -24,6 +24,11 @@
           <label for="speedSlider">Simulation Speed: <span id="speedValue">1.0×</span></label>
           <input id="speedSlider" type="range" min="0.2" max="6" step="0.1" value="1" />
           <label class="checkline"><input id="singleBlock" type="checkbox" /> Single Block (Haas-like)</label>
+          <label for="viewMode">Viewer</label>
+          <select id="viewMode">
+            <option value="3d" selected>3D Machine View</option>
+            <option value="2d">2D Top View</option>
+          </select>
         </div>
 
         <div class="setup-panel">
@@ -55,6 +60,10 @@
 
       <section class="right-panel">
         <canvas id="toolpathCanvas" width="900" height="600"></canvas>
+        <p class="viewer-note">
+          Ziel: industrietaugliche 1:1-Simulation. Der Viewer zeigt einen 3D-Maschinenraum mit Materialabtrag,
+          ersetzt aber noch kein voll kalibriertes CAM-/Controller-Modell.
+        </p>
         <div class="status-panel">
           <div><strong>Units:</strong> <span id="statusUnits">mm</span></div>
           <div><strong>Mode:</strong> <span id="statusMode">G90 G0</span></div>

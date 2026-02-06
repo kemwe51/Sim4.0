@@ -35,6 +35,7 @@ const singleBlockInput = $('singleBlock');
 
 const speedSlider = $('speedSlider');
 const speedValue = $('speedValue');
+const viewModeSelect = $('viewMode');
 const parsedLinesEl = $('parsedLines');
 
 const stockWidthInput = $('stockWidth');
@@ -133,6 +134,7 @@ const state = {
   lineAccumulator: 0,
   lastTs: null,
   mrrCm3PerMin: 0,
+  viewMode: '3d',
 };
 
 function cleanLine(line) {
@@ -533,17 +535,117 @@ function drawTool(bounds, w, h) {
   ctx.fill();
 }
 
+function projectIso(point, w, h) {
+  const stock = state.setup.stock;
+  const x = point.x - stock.width / 2;
+  const y = point.y - stock.height / 2;
+  const z = point.z;
+  const angle = Math.PI / 6;
+  const isoX = (x - y) * Math.cos(angle);
+  const isoY = (x + y) * Math.sin(angle) - z;
+  const spanX = (stock.width + stock.height) * 0.5 + 40;
+  const spanY = stock.depth + (stock.width + stock.height) * 0.3 + 60;
+  const scale = Math.min(w / spanX, h / spanY) * 0.82;
+  return {
+    x: w / 2 + isoX * scale,
+    y: h * 0.72 - isoY * scale,
+  };
+}
+
+function drawMachineFrame3D(w, h) {
+  const stock = state.setup.stock;
+  const frame = [
+    { x: 0, y: 0, z: 0 },
+    { x: stock.width, y: 0, z: 0 },
+    { x: stock.width, y: stock.height, z: 0 },
+    { x: 0, y: stock.height, z: 0 },
+  ].map((p) => projectIso(p, w, h));
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(140,155,185,0.5)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(frame[0].x, frame[0].y);
+  for (let i = 1; i < frame.length; i += 1) ctx.lineTo(frame[i].x, frame[i].y);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawStock3D(w, h) {
+  if (!state.heightmap) return;
+  const dx = state.setup.stock.width / state.cellsX;
+  const dy = state.setup.stock.height / state.cellsY;
+  const depth = state.setup.stock.depth;
+
+  for (let iy = 0; iy < state.cellsY; iy += 1) {
+    for (let ix = 0; ix < state.cellsX; ix += 1) {
+      const hCell = state.heightmap[iy][ix];
+      const ratio = Math.max(0, Math.min(1, hCell / Math.max(0.001, depth)));
+      const shade = Math.round(55 + ratio * 130);
+      const pA = projectIso({ x: ix * dx, y: iy * dy, z: hCell }, w, h);
+      const pB = projectIso({ x: (ix + 1) * dx, y: iy * dy, z: hCell }, w, h);
+      const pC = projectIso({ x: (ix + 1) * dx, y: (iy + 1) * dy, z: hCell }, w, h);
+      const pD = projectIso({ x: ix * dx, y: (iy + 1) * dy, z: hCell }, w, h);
+      ctx.fillStyle = `rgb(${Math.round(shade * 0.55)}, ${Math.round(shade * 0.75)}, ${shade})`;
+      ctx.beginPath();
+      ctx.moveTo(pA.x, pA.y);
+      ctx.lineTo(pB.x, pB.y);
+      ctx.lineTo(pC.x, pC.y);
+      ctx.lineTo(pD.x, pD.y);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+}
+
+function drawPath3D(w, h) {
+  for (const seg of state.pathSegments) {
+    const a = projectIso(seg.from, w, h);
+    const b = projectIso(seg.to, w, h);
+    ctx.save();
+    ctx.setLineDash(seg.motion === 'G0' ? [7, 5] : []);
+    ctx.strokeStyle = seg.motion === 'G0' ? '#9aa4b2' : '#6dff9d';
+    ctx.lineWidth = seg.motion === 'G0' ? 1.4 : 2.2;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawTool3D(w, h) {
+  const tool = projectIso(state.machine.position, w, h);
+  ctx.beginPath();
+  ctx.arc(tool.x, tool.y, 7, 0, Math.PI * 2);
+  ctx.fillStyle = state.alarm ? '#ff6f6f' : (state.machine.spindleOn ? '#53d0ff' : '#d7dde7');
+  ctx.fill();
+}
+
+function draw3DScene(w, h) {
+  drawMachineFrame3D(w, h);
+  drawStock3D(w, h);
+  drawPath3D(w, h);
+  drawTool3D(w, h);
+}
+
 function draw() {
   ensureCanvasSize();
   const w = canvas.width;
   const h = canvas.height;
   ctx.clearRect(0, 0, w, h);
 
-  const bounds = computeBounds();
-  drawGrid(bounds, w, h);
-  drawStock(bounds, w, h);
-  drawPath(bounds, w, h);
-  drawTool(bounds, w, h);
+  if (state.viewMode === '2d') {
+    const bounds = computeBounds();
+    drawGrid(bounds, w, h);
+    drawStock(bounds, w, h);
+    drawPath(bounds, w, h);
+    drawTool(bounds, w, h);
+    return;
+  }
+
+  draw3DScene(w, h);
 }
 
 function renderParsedLines() {
@@ -625,6 +727,11 @@ feedOverrideInput.addEventListener('change', () => {
   updateUI();
 });
 
+viewModeSelect.addEventListener('change', () => {
+  state.viewMode = viewModeSelect.value === '2d' ? '2d' : '3d';
+  draw();
+});
+
 [
   stockWidthInput,
   stockHeightInput,
@@ -647,6 +754,7 @@ function boot() {
   editor.value = exampleProgram;
   state.speed = Number(speedSlider.value);
   speedValue.textContent = `${state.speed.toFixed(1)}×`;
+  state.viewMode = viewModeSelect.value === '2d' ? '2d' : '3d';
   parseAndReset();
 }
 
