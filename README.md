@@ -1,56 +1,129 @@
-# CNC G-Code Simulator (Haas-style Digital Twin)
+# Sim4.0 CNC-Maschinenraumsimulator
 
-## Zielbild
-Dieses Update erweitert den Simulator deutlich Richtung **realitätsnahe Frässimulation** mit Haas-orientierter Bedienlogik (Cycle Start / Feed Hold / Single Block), Maschinenhüllraum-Prüfung und Work-Offset-Modell.
+## 1) Architekturübersicht (Komponenten + Datenfluss)
 
-> Wichtig: Ein Browser-Prototyp kann eine reale Maschine oder vollwertige CAM-Systeme (z. B. Mastercam + Maschinenmodell) nicht 1:1 ersetzen. Diese Version bringt aber viele zentrale Digital-Twin-Bausteine zusammen.
+```
+G-Code (.nc/.tap)
+  -> core/gcode_parser (Lexer/Parser, RS274-like)
+  -> core/interpreter (Modal State Machine, Canonical Commands)
+  -> core/motion_planner (zeitparametrisierte Trajektorie, dt-basiert)
+  -> core/kinematics (FK, Work Offset Mapping)
+  -> core/collision (Kollisionsereignisse / Maschinenraumgrenzen)
+  -> core/stock (Voxel-Abtrag, Reststock STL)
+  -> app/viewer (Timeline, Visualisierung, Exporte)
+```
 
-## Features
+### Modulrollen
+- `core/gcode_parser`: wandelt Zeilen robust in Tokens/Words, inkl. Fehlern pro Block.
+- `core/interpreter`: verarbeitet modale Zustände (`G90`, `G17`, `G54`, `M3` etc.) und erzeugt canonical commands.
+- `core/motion_planner`: erstellt eine zeitparametrisierte Abtastung (`TrajectorySample`) mit fester Simulationszeitbasis.
+- `core/kinematics`: 3-Achs FK (double precision JS Number), Feed-Clamping anhand Achsgrenzen.
+- `core/collision`: erkennt Envelope-Verletzung + Fixture-AABB Kollisionen, mit Zeit- und Blockbezug.
+- `core/stock`: voxelbasierter Materialabtrag entlang Trajektorie, STL-Export Reststock.
+- `app/viewer`: Browser-UI für Import/Simulation/Export.
 
-### Neu in diesem Stand
-- Einstellbare Simulationsauflösung bis **0,01 mm** (mit browserseitiger Sicherheitsbegrenzung der Heightmap-Größe)
-- Höhere Interpolationsdichte für Linien/Arcs basierend auf der gewählten Präzision
-- **Unreal-Export**: Toolpath und Setup als JSON für den Import in eine Unreal-Engine-Pipeline
+## 2) Datenmodelle
 
+### `ModalState`
+```js
+{
+  plane: 'G17' | 'G18' | 'G19',
+  units: 'mm' | 'inch',
+  distanceMode: 'G90' | 'G91',
+  feedMode: 'G94',
+  motionMode: 'G0' | 'G1',
+  spindleMode: 'M3' | 'M4' | 'M5',
+  spindleRpm: number,
+  feed: number,           // mm/min
+  workOffset: 'G54',
+  tool: number,
+  position: { x, y, z }
+}
+```
 
-### 1) Materialabtrag (Digital Twin Kern)
-- 3D-Maschinenviewer (isometrisch) + optionaler 2D-Top-View
-- Heightmap-basiertes Rohteilmodell (Stock X/Y/Z)
-- Werkzeugdurchmesser-bezogener Materialeingriff
-- Live-Volumenabtrag (`Removed`) und Restmaterial (`Stock Left`)
-- MRR-Schätzung (`cm³/min`)
+### `CanonicalCommand`
+```js
+// motion
+{
+  type: 'motion',
+  mode: 'G0' | 'G1',
+  plane,
+  from: {x,y,z},
+  to: {x,y,z},
+  feed,
+  spindleRpm,
+  spindleMode,
+  workOffset,
+  blockIndex,
+  lineNumber
+}
 
-### 2) G-Code Engine
-- Unterstützt: `G0`, `G1`, `G2`, `G3`, `G17`, `G20`, `G21`, `G90`, `G91`, `G54`, `M3`, `M5`, `M30`
-- Arc-Interpolation über `I/J` im XY-Plane
-- Absolut/inkrementell + mm/inch
+// tool change stub
+{ type: 'tool_change', tool, blockIndex, lineNumber }
+```
 
-### 3) Haas-orientierte Bedienung
-- **Cycle Start**
-- **Feed Hold**
-- **Single Step**
-- **Single Block** (Checkbox)
-- Feed Override [%]
+### `TrajectorySample`
+```js
+{
+  t: number,              // seconds
+  blockIndex: number,
+  lineNumber: number,
+  position: {x,y,z},      // TCP in machine coordinates
+  axes: {x,y,z},          // commanded axes
+  feed: number,           // mm/min effective
+  spindleRpm: number,
+  spindleMode: 'M3'|'M4'|'M5',
+  motionMode: 'G0'|'G1'
+}
+```
 
-### 4) Maschinenmodell
-- Konfigurierbarer Maschinenhüllraum (X/Y/Z Max, Z Min)
-- Work Offset `G54` (X/Y/Z)
-- Anzeige von Werkstück- und Maschinenkoordinaten
-- Alarm bei Achsgrenzenverletzung (`TRAVEL LIMIT`)
+## 3) Lauffähiges Minimalbeispiel (Phase 1)
 
-## Industrietauglichkeit / Realismus
-Diese Version ist ein starker Browser-Prototyp mit 3D-Viewer und präziser Trajektorienabtastung bis 0,01 mm, aber keine zertifizierte 1:1-Maschinenvalidierung. Für echte industrielle Freigabe braucht es Controller-Digitalzwillinge, Maschinenkalibrierung und verifizierte Kollisionsmodelle.
+### Enthaltene Features
+- 3-Achs Fräsen
+- `G0/G1`, `G17/G18/G19`, `G20/G21`, `G90/G91`, `G94`, `F`, `S`, `M3/M4/M5`, `M6` Stub, `G54`
+- Modal State Machine
+- Fixed timestep Motion Planning (`dt=10ms` im Viewer)
+- Voxel-Stock-Abtrag
+- Kollisionsreport (Envelope + Fixture AABB)
+- Exporte: `collisions.csv` und `reststock.stl`
 
-## Start
-1. Dateien im selben Ordner halten (`index.html`, `style.css`, `app.js`, `README.md`).
-2. `index.html` im Browser öffnen.
-3. `Parse` drücken, dann `Cycle Start`.
-4. Bei Bedarf im Viewer zwischen `3D Machine View` und `2D Top View` wechseln.
-5. Für Unreal-Workflow nach dem Parsen auf `Export Unreal JSON` klicken.
+### Start
+1. `python3 -m http.server 8000`
+2. Browser öffnen: `http://localhost:8000`
+3. G-Code laden/ändern, **Simulieren** klicken.
 
-## Nächste Schritte Richtung „echte 1:1 Maschine“
-- Beschleunigungs-/Jerk-Profile und look-ahead feed planning
-- Werkzeughalter-/Spannmittel-/Maschinenkollisionsmodelle
-- Controller-spezifische Makros, Tool Length / Cutter Compensation
-- 3D-Materialmodell (Voxel/Mesh statt 2.5D Heightmap)
-- Kalibrierte Maschinenparameter je Haas-Modell
+### Beispielinputs
+- `examples/phase1-example.nc`
+- `examples/machine-3axis.json`
+
+## 4) Iterationsplan Phase 2–4
+
+### Phase 2
+- `G2/G3` inkl. `IJK` und `R`
+- Tool Length Compensation `G43 H`
+- Erweiterte Work Offsets (`G55+`)
+- Optional: Cutter Comp `G41/G42` zunächst geometrisch approximiert
+
+### Phase 3 (5-Achs)
+- A/B/C-Achsen im Maschinenmodell + FK-Kette für Rotationsachsen
+- Axis-commanded mode (A/B/C direkt aus G-Code)
+- Optionaler TCP/RTCP Modus danach (klar als Modus markieren)
+
+### Phase 4 (steuerungsnah)
+- Beschleunigungsprofile (Trapez/S-Curve)
+- Lookahead über N Blöcke
+- Corner blending / `G64`-ähnlicher Modus
+- Continuous Collision Detection (swept tests, conservative advancement)
+
+## Tests
+- Parser/Modalität
+- Planner-Timing
+- FK
+- Triangle Intersection (robuster 2D-Baryzentrik-Ansatz auf Triangles)
+- Determinism Stock Hash
+
+Ausführen mit:
+```bash
+npm test
+```
