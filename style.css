@@ -109,6 +109,21 @@ input[type='range'] {
   width: 100%;
 }
 
+
+.speed-control select {
+  background: #121722;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 6px;
+}
+
+.viewer-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
 .setup-grid input {
   background: #121722;
   border: 1px solid var(--border);

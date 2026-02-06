@@ -8,6 +8,7 @@ Dieses Update erweitert den Simulator deutlich Richtung **realitätsnahe Frässi
 ## Features
 
 ### 1) Materialabtrag (Digital Twin Kern)
+- 3D-Maschinenviewer (isometrisch) + optionaler 2D-Top-View
 - Heightmap-basiertes Rohteilmodell (Stock X/Y/Z)
 - Werkzeugdurchmesser-bezogener Materialeingriff
 - Live-Volumenabtrag (`Removed`) und Restmaterial (`Stock Left`)
@@ -31,10 +32,14 @@ Dieses Update erweitert den Simulator deutlich Richtung **realitätsnahe Frässi
 - Anzeige von Werkstück- und Maschinenkoordinaten
 - Alarm bei Achsgrenzenverletzung (`TRAVEL LIMIT`)
 
+## Industrietauglichkeit / Realismus
+Diese Version ist ein starker Browser-Prototyp mit 3D-Viewer, aber keine zertifizierte 1:1-Maschinenvalidierung. Für echte industrielle Freigabe braucht es Controller-Digitalzwillinge, Maschinenkalibrierung und verifizierte Kollisionsmodelle.
+
 ## Start
 1. Dateien im selben Ordner halten (`index.html`, `style.css`, `app.js`, `README.md`).
 2. `index.html` im Browser öffnen.
 3. `Parse` drücken, dann `Cycle Start`.
+4. Bei Bedarf im Viewer zwischen `3D Machine View` und `2D Top View` wechseln.
 
 ## Nächste Schritte Richtung „echte 1:1 Maschine“
 - Beschleunigungs-/Jerk-Profile und look-ahead feed planning
