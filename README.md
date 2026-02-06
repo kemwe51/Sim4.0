@@ -7,6 +7,12 @@ Dieses Update erweitert den Simulator deutlich Richtung **realitätsnahe Frässi
 
 ## Features
 
+### Neu in diesem Stand
+- Einstellbare Simulationsauflösung bis **0,01 mm** (mit browserseitiger Sicherheitsbegrenzung der Heightmap-Größe)
+- Höhere Interpolationsdichte für Linien/Arcs basierend auf der gewählten Präzision
+- **Unreal-Export**: Toolpath und Setup als JSON für den Import in eine Unreal-Engine-Pipeline
+
+
 ### 1) Materialabtrag (Digital Twin Kern)
 - 3D-Maschinenviewer (isometrisch) + optionaler 2D-Top-View
 - Heightmap-basiertes Rohteilmodell (Stock X/Y/Z)
@@ -33,13 +39,14 @@ Dieses Update erweitert den Simulator deutlich Richtung **realitätsnahe Frässi
 - Alarm bei Achsgrenzenverletzung (`TRAVEL LIMIT`)
 
 ## Industrietauglichkeit / Realismus
-Diese Version ist ein starker Browser-Prototyp mit 3D-Viewer, aber keine zertifizierte 1:1-Maschinenvalidierung. Für echte industrielle Freigabe braucht es Controller-Digitalzwillinge, Maschinenkalibrierung und verifizierte Kollisionsmodelle.
+Diese Version ist ein starker Browser-Prototyp mit 3D-Viewer und präziser Trajektorienabtastung bis 0,01 mm, aber keine zertifizierte 1:1-Maschinenvalidierung. Für echte industrielle Freigabe braucht es Controller-Digitalzwillinge, Maschinenkalibrierung und verifizierte Kollisionsmodelle.
 
 ## Start
 1. Dateien im selben Ordner halten (`index.html`, `style.css`, `app.js`, `README.md`).
 2. `index.html` im Browser öffnen.
 3. `Parse` drücken, dann `Cycle Start`.
 4. Bei Bedarf im Viewer zwischen `3D Machine View` und `2D Top View` wechseln.
+5. Für Unreal-Workflow nach dem Parsen auf `Export Unreal JSON` klicken.
 
 ## Nächste Schritte Richtung „echte 1:1 Maschine“
 - Beschleunigungs-/Jerk-Profile und look-ahead feed planning
