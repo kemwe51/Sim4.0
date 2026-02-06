@@ -1,0 +1,27 @@
+{
+  "name": "Demo-3Axis",
+  "tcp": { "x": 0, "y": 0, "z": 0 },
+  "stock": { "width": 120, "height": 80, "depth": 30, "voxelSize": 2 },
+  "tool": { "diameter": 10 },
+  "workOffsets": {
+    "G54": { "x": 0, "y": 0, "z": 0 }
+  },
+  "axes": {
+    "X": { "type": "linear", "maxVelocity": 500, "maxAccel": 3000, "min": 0, "max": 500 },
+    "Y": { "type": "linear", "maxVelocity": 500, "maxAccel": 3000, "min": 0, "max": 400 },
+    "Z": { "type": "linear", "maxVelocity": 300, "maxAccel": 2000, "min": -200, "max": 300 }
+  },
+  "envelope": {
+    "min": { "x": 0, "y": 0, "z": -200 },
+    "max": { "x": 500, "y": 400, "z": 300 }
+  },
+  "fixtures": [
+    {
+      "name": "vise",
+      "aabb": {
+        "min": { "x": 45, "y": 30, "z": -20 },
+        "max": { "x": 75, "y": 50, "z": 25 }
+      }
+    }
+  ]
+}
