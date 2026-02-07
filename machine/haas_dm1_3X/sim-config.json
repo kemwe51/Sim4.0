@@ -1,0 +1,24 @@
+{
+  "name": "Haas DM1 3X",
+  "tcp": { "x": 0, "y": 0, "z": 0 },
+  "stock": { "width": 160, "height": 100, "depth": 40, "voxelSize": 2 },
+  "tool": { "diameter": 10 },
+  "workOffsets": {
+    "G54": { "x": 0, "y": 0, "z": 0 }
+  },
+  "axisDefaults": {
+    "maxVelocity": 600,
+    "maxAccel": 3500,
+    "min": -500,
+    "max": 500
+  },
+  "fixtures": [
+    {
+      "name": "Schraubstock",
+      "aabb": {
+        "min": { "x": 40, "y": 20, "z": -20 },
+        "max": { "x": 90, "y": 60, "z": 30 }
+      }
+    }
+  ]
+}

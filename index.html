@@ -11,6 +11,38 @@
       <section>
         <h1>CNC-Maschinenraumsimulator (Phase 1)</h1>
         <p>Steuerungsnahe Simulation direkt aus G-Code (ohne CAM-Toolpath Import).</p>
+        <div class="config-card">
+          <label class="field">
+            Maschine
+            <select id="machineSelect"></select>
+          </label>
+          <div class="config-grid">
+            <label class="field">
+              Sim-Schritt dt (s)
+              <input id="dt" type="number" min="0.001" step="0.001" value="0.01" />
+            </label>
+            <label class="field">
+              Voxelgröße (mm)
+              <input id="voxelSize" type="number" min="0.5" step="0.5" />
+            </label>
+            <label class="field">
+              Werkzeug Ø (mm)
+              <input id="toolDiameter" type="number" min="0.1" step="0.1" />
+            </label>
+            <label class="field">
+              Stock Breite (mm)
+              <input id="stockWidth" type="number" min="1" step="1" />
+            </label>
+            <label class="field">
+              Stock Höhe (mm)
+              <input id="stockHeight" type="number" min="1" step="1" />
+            </label>
+            <label class="field">
+              Stock Tiefe (mm)
+              <input id="stockDepth" type="number" min="1" step="1" />
+            </label>
+          </div>
+        </div>
         <textarea id="gcode"></textarea>
         <div class="row">
           <button id="run">Simulieren</button>
@@ -22,6 +54,10 @@
 
       <section>
         <canvas id="view" width="800" height="420"></canvas>
+        <h3>Maschinenmodell</h3>
+        <pre id="machineInfo"></pre>
+        <h3>STL Assets</h3>
+        <ul id="assetList" class="asset-list"></ul>
         <h3>Trajectory (erste Samples)</h3>
         <pre id="timeline"></pre>
         <h3>Kollisionen</h3>

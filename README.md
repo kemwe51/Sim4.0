@@ -91,11 +91,12 @@ G-Code (.nc/.tap)
 ### Start
 1. `python3 -m http.server 8000`
 2. Browser öffnen: `http://localhost:8000`
-3. G-Code laden/ändern, **Simulieren** klicken.
+3. Maschine auswählen, G-Code laden/ändern, **Simulieren** klicken.
 
 ### Beispielinputs
 - `examples/phase1-example.nc`
 - `examples/machine-3axis.json`
+- `machine/haas_dm1_3X/DM1_3X.xml` + `machine/haas_dm1_3X/sim-config.json`
 
 ## 4) Iterationsplan Phase 2–4
 
